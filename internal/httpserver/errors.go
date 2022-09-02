@@ -48,3 +48,11 @@ func NotFoundErrorf(message string, parameters ...any) KeyValueError {
 		Message:        fmt.Sprintf(message, parameters...),
 	}
 }
+
+func InternalServerError(message string, cause error) KeyValueError {
+	return KeyValueError{
+		StatusCodeHTTP: http.StatusInternalServerError,
+		Message:        message,
+		Cause:          cause,
+	}
+}

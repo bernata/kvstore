@@ -37,7 +37,7 @@ func LoggerOption(logger *zerolog.Logger) ServerOption {
 
 func New(listener net.Listener, store KVStore, options ...ServerOption) (Server, error) {
 	serverOptions := serverOptions{
-		logger: zerolog.DefaultContextLogger,
+		logger: zerolog.Ctx(context.Background()),
 	}
 
 	for _, option := range options {

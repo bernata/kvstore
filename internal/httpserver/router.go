@@ -1,7 +1,10 @@
 package httpserver
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -11,6 +14,7 @@ import (
 func router(store KVStore, serverOptions *serverOptions) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(loggerContext(serverOptions.logger))
+	r.Use(recovery)
 
 	r.Handle("/v1/ping", pingHandler()).Methods(http.MethodGet)
 	r.Handle("/v1/readiness", readinessHandler()).Methods(http.MethodGet)
@@ -22,6 +26,28 @@ func router(store KVStore, serverOptions *serverOptions) *mux.Router {
 	subrouter.Handle("/keys/{key:.*}", deleteKeyHandler(store)).Methods(http.MethodDelete)
 
 	return r
+}
+
+func recovery(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := zerolog.Ctx(r.Context())
+		defer func(logger *zerolog.Logger) {
+			if err := recover(); err != nil {
+				logger.Error().Interface("error", err).Bytes("stack", debug.Stack()).Str("reason", "panic").Msg("")
+				httpError(w, InternalServerError(fmt.Sprintf("server terminated abnormally: %v", err), nil))
+			}
+
+		}(logger)
+		next.ServeHTTP(w, r)
+
+	})
+}
+
+func httpError(w http.ResponseWriter, err KeyValueError) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(err.StatusCode())
+	marshalledErr, _ := json.Marshal(err)
+	_, _ = w.Write(marshalledErr)
 }
 
 func loggerContext(logger *zerolog.Logger) mux.MiddlewareFunc {
