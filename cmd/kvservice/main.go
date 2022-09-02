@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/bernata/kvstore/internal/httpserver"
@@ -28,10 +32,21 @@ func main() {
 		panic(err)
 	}
 
+	ch := make(chan os.Signal, 2)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-ch
+		_ = srv.Shutdown(context.Background())
+		logger.Info().Str("api", "notify").Str("reason", "shutting_down").Msg("")
+	}()
+
 	err = srv.Listen()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		panic(err)
 	}
+	logger.Info().Str("api", "main").Str("reason", "shutdown").Msg("")
+
+	time.Sleep(time.Second * 5)
 }
 
 func newServer(port int, store *kv.Store, logger *zerolog.Logger) (httpserver.Server, error) {
@@ -44,8 +59,7 @@ func newServer(port int, store *kv.Store, logger *zerolog.Logger) (httpserver.Se
 }
 
 func newLogger() zerolog.Logger {
-	//Example: HOSTNAME=andrewb-host
-	host := os.Getenv("HOSTNAME")
+	host, _ := os.Hostname()
 	return zerolog.New(os.Stderr).
 		With().
 		Timestamp().
