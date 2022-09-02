@@ -1,0 +1,43 @@
+package httpserver_test
+
+import (
+	"context"
+	"errors"
+	"net"
+	"net/http"
+	"testing"
+
+	"github.com/bernata/kvstore/internal/httpserver"
+	"github.com/stretchr/testify/require"
+)
+
+func TestServer(t *testing.T) {
+	srv := startTestServer()
+
+	response, err := http.Get(srv.BaseURL())
+	require.NoError(t, err)
+	require.Equal(t, http.StatusOK, response.StatusCode)
+
+	require.NoError(t, srv.Shutdown(context.Background()))
+}
+
+func startTestServer() httpserver.Server {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		panic(err)
+	}
+
+	srv, err := httpserver.New(listener)
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		err := srv.Listen()
+		if !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
+	}()
+
+	return srv
+}
