@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
+
+	"github.com/bernata/kvstore/apiclient"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -36,15 +39,20 @@ func deleteKeyHandler(store KVStore) http.Handler {
 
 func retrieveKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		requestRetrieve := request.(RetrieveValueRequest)
+		requestRetrieve := request.(apiclient.RetrieveValueRequest)
 
-		value, ok := store.Get(requestRetrieve.Key)
-		if !ok {
-			return nil, NotFoundErrorf("key '%s' not found", requestRetrieve.Key)
+		key, err := url.PathUnescape(requestRetrieve.Key)
+		if err != nil {
+			return nil, err
 		}
 
-		return RetrieveValueResponse{
-			Key:   requestRetrieve.Key,
+		value, ok := store.Get(key)
+		if !ok {
+			return nil, apiclient.NotFoundErrorf("key '%s' not found", key)
+		}
+
+		return apiclient.RetrieveValueResponse{
+			Key:   key,
 			Value: value,
 		}, nil
 	}
@@ -52,17 +60,25 @@ func retrieveKeyEndpoint(store KVStore) endpoint.Endpoint {
 
 func writeKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		requestWrite := request.(WriteValueRequest)
-		store.Write(requestWrite.Key, requestWrite.Value)
-		return WriteValueResponse{}, nil
+		requestWrite := request.(apiclient.WriteValueRequest)
+		key, err := url.PathUnescape(requestWrite.Key)
+		if err != nil {
+			return nil, err
+		}
+		store.Write(key, requestWrite.Value)
+		return apiclient.WriteValueResponse{}, nil
 	}
 }
 
 func deleteKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		requestWrite := request.(DeleteKeyRequest)
-		store.Delete(requestWrite.Key)
-		return DeleteKeyResponse{}, nil
+		requestDelete := request.(apiclient.DeleteKeyRequest)
+		key, err := url.PathUnescape(requestDelete.Key)
+		if err != nil {
+			return nil, err
+		}
+		store.Delete(key)
+		return apiclient.DeleteKeyResponse{}, nil
 	}
 }
 
@@ -70,10 +86,10 @@ func decodeRetrieveValueRequest(_ context.Context, r *http.Request) (interface{}
 	vars := mux.Vars(r)
 	key, ok := vars["key"] //path parameter name
 	if !ok {
-		return nil, BadRequest("error reading key from path", nil)
+		return nil, apiclient.BadRequest("error reading key from path", nil)
 	}
 
-	return RetrieveValueRequest{
+	return apiclient.RetrieveValueRequest{
 		Key: key,
 	}, nil
 }
@@ -82,17 +98,17 @@ func decodeWriteValueRequest(_ context.Context, r *http.Request) (interface{}, e
 	vars := mux.Vars(r)
 	key, ok := vars["key"] //path parameter name
 	if !ok {
-		return nil, BadRequest("error reading key from path", nil)
+		return nil, apiclient.BadRequest("error reading key from path", nil)
 	}
 
-	var request WriteValueRequest
+	var request apiclient.WriteValueRequest
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil, BadRequest("error reading request body", err)
+		return nil, apiclient.BadRequest("error reading request body", err)
 	}
 	err = json.Unmarshal(data, &request)
 	if err != nil {
-		return nil, BadRequest("error parsing request body", err)
+		return nil, apiclient.BadRequest("error parsing request body", err)
 	}
 	request.Key = key
 	return request, nil
@@ -102,34 +118,10 @@ func decodeDeleteKeyRequest(_ context.Context, r *http.Request) (interface{}, er
 	vars := mux.Vars(r)
 	key, ok := vars["key"] //path parameter name
 	if !ok {
-		return nil, BadRequest("error reading key from path", nil)
+		return nil, apiclient.BadRequest("error reading key from path", nil)
 	}
 
-	return DeleteKeyRequest{
+	return apiclient.DeleteKeyRequest{
 		Key: key,
 	}, nil
-}
-
-type RetrieveValueRequest struct {
-	Key string
-}
-
-type RetrieveValueResponse struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
-type WriteValueRequest struct {
-	Key   string `json:"-"`
-	Value string `json:"value"`
-}
-
-type WriteValueResponse struct {
-}
-
-type DeleteKeyRequest struct {
-	Key string `json:"key"`
-}
-
-type DeleteKeyResponse struct {
 }

@@ -8,7 +8,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/bernata/kvstore/internal/httpserver"
+	"github.com/bernata/kvstore/apiclient"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -38,7 +39,7 @@ func TestWriteKey(t *testing.T) {
 	srv := startTestServer()
 
 	// NOTE: k1 is ignored because the key is determined from the path
-	response, err := http.Post(srv.BaseURL()+"/v1/keys/foo/bar", applicationJSON, reader(httpserver.WriteValueRequest{Key: "k1", Value: "v1"}))
+	response, err := http.Post(srv.BaseURL()+"/v1/keys/foo/bar", applicationJSON, reader(apiclient.WriteValueRequest{Key: "k1", Value: "v1"}))
 	require.NoError(t, err)
 	requireResponse(t, response, http.StatusNoContent, "")
 
@@ -54,7 +55,7 @@ func TestWriteDeleteGetKey(t *testing.T) {
 	srv := startTestServer()
 
 	// NOTE: k1 is ignored because the key is determined from the path
-	response, err := http.Post(srv.BaseURL()+"/v1/keys/foo", applicationJSON, reader(httpserver.WriteValueRequest{Value: "v1"}))
+	response, err := http.Post(srv.BaseURL()+"/v1/keys/foo", applicationJSON, reader(apiclient.WriteValueRequest{Value: "v1"}))
 	require.NoError(t, err)
 	requireResponse(t, response, http.StatusNoContent, "")
 

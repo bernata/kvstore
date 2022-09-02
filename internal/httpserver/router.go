@@ -7,6 +7,8 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/bernata/kvstore/apiclient"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
 )
@@ -34,7 +36,7 @@ func recovery(next http.Handler) http.Handler {
 		defer func(logger *zerolog.Logger) {
 			if err := recover(); err != nil {
 				logger.Error().Interface("error", err).Bytes("stack", debug.Stack()).Str("reason", "panic").Msg("")
-				httpError(w, InternalServerError(fmt.Sprintf("server terminated abnormally: %v", err), nil))
+				httpError(w, apiclient.InternalServerError(fmt.Sprintf("server terminated abnormally: %v", err), nil))
 			}
 
 		}(logger)
@@ -43,7 +45,7 @@ func recovery(next http.Handler) http.Handler {
 	})
 }
 
-func httpError(w http.ResponseWriter, err KeyValueError) {
+func httpError(w http.ResponseWriter, err apiclient.KeyValueError) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(err.StatusCode())
 	marshalledErr, _ := json.Marshal(err)

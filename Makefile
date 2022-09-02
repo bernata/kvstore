@@ -17,9 +17,13 @@ build_client: lint
 test: build_server build_client
 	go test --mod=vendor --race -v -coverprofile=coverage.out ./...
 
+integration_test: build_server build_client
+	./integration_test.sh
+
 .PHONY: run
 run: build_server
 	./bin/kvservice -p 8282
+
 
 .PHONY: lint
 lint:

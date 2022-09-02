@@ -1,4 +1,4 @@
-package httpserver
+package apiclient
 
 import (
 	"encoding/json"
@@ -7,9 +7,9 @@ import (
 )
 
 type KeyValueError struct {
-	StatusCodeHTTP int
-	Message        string
-	Cause          error
+	StatusCodeHTTP int    `json:"status_code"`
+	Message        string `json:"message"`
+	Cause          error  `json:"-"`
 }
 
 func (kve KeyValueError) Error() string {
