@@ -63,3 +63,28 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
 
 ## Monitoring
 - Dashboards links -- see runbook
+
+## Endpoints
+- GET `/v1/keys/{key}`
+    ```
+  key can be any url encoded string upto 250 characters
+  Response is 200 with value of key OR
+  Response is 404 if there is no such key
+  TODO: make sure key can be like: "a/b/c"
+    ```
+  
+- DELETE `/v1/keys/{key}`
+    ```
+  key can be any url encoded string upto 250 characters
+  Response is 200 if the key no longer exists
+    ``` 
+
+- POST `/v1/keys/{key}?`
+    ```
+  {
+      "value": "base64"
+  }
+  key can be any url encoded string upto 250 characters
+  value can be any base64 encoded string upto 1MB
+  Response is 200 if the key no longer exists
+    ``` 
