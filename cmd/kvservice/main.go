@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-
-	"github.com/bernata/kvstore/internal/kv"
+	"os"
 
 	"github.com/alecthomas/kong"
 	"github.com/bernata/kvstore/internal/httpserver"
+	"github.com/bernata/kvstore/internal/kv"
+	"github.com/rs/zerolog"
 )
 
 type ServiceCommandLine struct {
@@ -20,8 +21,9 @@ func main() {
 	var commandLine ServiceCommandLine
 	_ = kong.Parse(&commandLine)
 
+	logger := newLogger()
 	store := kv.NewStore(100)
-	srv, err := newServer(commandLine.Port, store)
+	srv, err := newServer(commandLine.Port, store, &logger)
 	if err != nil {
 		panic(err)
 	}
@@ -32,11 +34,22 @@ func main() {
 	}
 }
 
-func newServer(port int, store *kv.Store) (httpserver.Server, error) {
+func newServer(port int, store *kv.Store, logger *zerolog.Logger) (httpserver.Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return httpserver.Server{}, err
 	}
 
-	return httpserver.New(listener, store)
+	return httpserver.New(listener, store, httpserver.LoggerOption(logger))
+}
+
+func newLogger() zerolog.Logger {
+	//Example: HOSTNAME=andrewb-host
+	host := os.Getenv("HOSTNAME")
+	return zerolog.New(os.Stderr).
+		With().
+		Timestamp().
+		Caller().
+		Str("host", host).
+		Logger()
 }

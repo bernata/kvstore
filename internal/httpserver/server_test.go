@@ -24,7 +24,7 @@ func TestServer(t *testing.T) {
 	require.NoError(t, srv.Shutdown(context.Background()))
 }
 
-func startTestServer() httpserver.Server {
+func startTestServer(options ...httpserver.ServerOption) httpserver.Server {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic(err)
@@ -32,7 +32,7 @@ func startTestServer() httpserver.Server {
 
 	store := kv.NewStore(10)
 
-	srv, err := httpserver.New(listener, store)
+	srv, err := httpserver.New(listener, store, options...)
 	if err != nil {
 		panic(err)
 	}

@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/rs/zerolog"
+
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 )
@@ -21,10 +23,30 @@ type KVStore interface {
 	Write(key, value string)
 }
 
-func New(listener net.Listener, store KVStore) (Server, error) {
+type serverOptions struct {
+	logger *zerolog.Logger
+}
+
+type ServerOption func(*serverOptions)
+
+func LoggerOption(logger *zerolog.Logger) ServerOption {
+	return func(option *serverOptions) {
+		option.logger = logger
+	}
+}
+
+func New(listener net.Listener, store KVStore, options ...ServerOption) (Server, error) {
+	serverOptions := serverOptions{
+		logger: zerolog.DefaultContextLogger,
+	}
+
+	for _, option := range options {
+		option(&serverOptions)
+	}
+
 	server := &http.Server{
 		Addr:    listener.Addr().String(),
-		Handler: router(store),
+		Handler: router(store, &serverOptions),
 	}
 
 	return Server{server: server, listener: listener, store: store}, nil
