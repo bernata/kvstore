@@ -4,6 +4,9 @@ import (
 	"context"
 	"net"
 	"net/http"
+
+	"github.com/go-kit/kit/endpoint"
+	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 type Server struct {
@@ -13,11 +16,8 @@ type Server struct {
 
 func New(listener net.Listener) (Server, error) {
 	server := &http.Server{
-		Addr: listener.Addr().String(),
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("done"))
-		}),
+		Addr:    listener.Addr().String(),
+		Handler: router(),
 	}
 
 	return Server{server: server, listener: listener}, nil
@@ -34,4 +34,12 @@ func (s Server) Listen() error {
 
 func (s Server) Shutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
+}
+
+func newHandler(
+	e endpoint.Endpoint,
+	dec httptransport.DecodeRequestFunc,
+	enc httptransport.EncodeResponseFunc,
+) *httptransport.Server {
+	return httptransport.NewServer(e, dec, enc)
 }

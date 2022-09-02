@@ -72,6 +72,12 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
 - Dashboards links -- see runbook
 
 ## Endpoints
+- GET `/v1/ping`
+  Returns 200 OK
+
+- GET `/v1/readiness`
+  Returns 200 OK
+
 - GET `/v1/keys/{key}`
     ```
   key can be any url encoded string upto 250 characters

@@ -12,11 +12,12 @@ import (
 )
 
 func TestServer(t *testing.T) {
+	t.Parallel()
 	srv := startTestServer()
 
 	response, err := http.Get(srv.BaseURL())
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, response.StatusCode)
+	require.Equal(t, http.StatusNotFound, response.StatusCode)
 
 	require.NoError(t, srv.Shutdown(context.Background()))
 }
