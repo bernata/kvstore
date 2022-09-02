@@ -14,7 +14,14 @@ NOTE: keys are logged; but values are never logged.
 
 ## Requirements
 - golang 1.18
+- golangci-lint 1.46.2+
 - gnumake 3.81+
+- docker 20.10+
+- go-swagger [only to build api client from yaml]
+
+## go-swagger
+brew tap go-swagger/go-swagger
+brew install go-swagger
 
 ## Build
 `make all`
