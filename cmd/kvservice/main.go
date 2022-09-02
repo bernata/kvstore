@@ -35,7 +35,7 @@ func main() {
 }
 
 func newServer(port int, store *kv.Store, logger *zerolog.Logger) (httpserver.Server, error) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return httpserver.Server{}, err
 	}

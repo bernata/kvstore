@@ -62,6 +62,11 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
     kvclient: error: [404]: [404]: key 'mykey' not found"
 ```
 
+# Docker
+`make docker` - builds a linux service and centos image of kvservice
+
+`make dockerrun` - runs the docker image with port mapping 8282:8282
+
 ## Deployment
 - Run terraform to provision infrastructure/monitoring/alerts -- see runbook
 - Run pipeline to deploy image -- see runbook
