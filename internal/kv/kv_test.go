@@ -22,7 +22,8 @@ func TestRetrieveKey(t *testing.T) {
 	t.Parallel()
 	store := kv.NewStore(-1)
 
-	store.Write("foo/bar", "v1")
+	err := store.Write("foo/bar", "v1")
+	require.NoError(t, err)
 	result, ok := store.Get("foo/bar")
 	require.True(t, ok)
 	require.Equal(t, "v1", result)
@@ -32,12 +33,14 @@ func TestOverwriteKey(t *testing.T) {
 	t.Parallel()
 	store := kv.NewStore(-1)
 
-	store.Write("foo/bar", "v1")
+	err := store.Write("foo/bar", "v1")
+	require.NoError(t, err)
 	result, ok := store.Get("foo/bar")
 	require.True(t, ok)
 	require.Equal(t, "v1", result)
 
-	store.Write("foo/bar", "v2")
+	err = store.Write("foo/bar", "v2")
+	require.NoError(t, err)
 	result, ok = store.Get("foo/bar")
 	require.True(t, ok)
 	require.Equal(t, "v2", result)
@@ -47,8 +50,10 @@ func TestMultipleKeys(t *testing.T) {
 	t.Parallel()
 	store := kv.NewStore(-1)
 
-	store.Write("foo/bar1", "v1")
-	store.Write("foo/bar2", "v2")
+	err := store.Write("foo/bar1", "v1")
+	require.NoError(t, err)
+	err = store.Write("foo/bar2", "v2")
+	require.NoError(t, err)
 
 	result, ok := store.Get("foo/bar1")
 	require.True(t, ok)
@@ -72,7 +77,8 @@ func TestDeleteKey(t *testing.T) {
 	t.Parallel()
 	store := kv.NewStore(20)
 
-	store.Write("foo/bar", "v1")
+	err := store.Write("foo/bar", "v1")
+	require.NoError(t, err)
 	store.Delete("foo/bar")
 	_, ok := store.Get("foo/bar")
 	require.False(t, ok)
@@ -89,7 +95,8 @@ func TestConcurrentWrites(t *testing.T) {
 	for i := 0; i < concurrencyCount; i++ {
 		go func(n int) {
 			defer wg.Done()
-			store.Write(key, fmt.Sprintf("v%d", n))
+			err := store.Write(key, fmt.Sprintf("v%d", n))
+			require.NoError(t, err)
 		}(i)
 	}
 
@@ -98,4 +105,26 @@ func TestConcurrentWrites(t *testing.T) {
 	result, ok := store.Get(key)
 	require.True(t, ok)
 	require.True(t, strings.HasPrefix(result, "v"))
+}
+
+func TestKeySize(t *testing.T) {
+	t.Parallel()
+	store := kv.NewStore(20)
+
+	err := store.Write(strings.Repeat("0", 250), "v1")
+	require.NoError(t, err)
+
+	err = store.Write(strings.Repeat("0", 251), "v1")
+	require.Error(t, err)
+}
+
+func TestValueSize(t *testing.T) {
+	t.Parallel()
+	store := kv.NewStore(20)
+
+	err := store.Write("key1", strings.Repeat("v", 1024*1024))
+	require.NoError(t, err)
+
+	err = store.Write("key2", strings.Repeat("v", 1024*1024+1))
+	require.Error(t, err)
 }

@@ -65,7 +65,10 @@ func writeKeyEndpoint(store KVStore) endpoint.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		store.Write(key, requestWrite.Value)
+		err = store.Write(key, requestWrite.Value)
+		if err != nil {
+			return nil, err
+		}
 		return apiclient.WriteValueResponse{}, nil
 	}
 }

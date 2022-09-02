@@ -54,6 +54,6 @@ func (k kvPanic) Delete(_ string) {
 	panic("unit test panic")
 }
 
-func (k kvPanic) Write(_, _ string) {
+func (k kvPanic) Write(_, _ string) error {
 	panic("unit test panic")
 }

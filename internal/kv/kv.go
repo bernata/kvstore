@@ -1,6 +1,9 @@
 package kv
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Store struct {
 	// Simple map backing store with a read-write mutex to protect against
@@ -38,8 +41,22 @@ func (kv *Store) Delete(key string) {
 	delete(kv.data, key)
 }
 
-func (kv *Store) Write(key, value string) {
+func (kv *Store) Write(key, value string) error {
 	kv.mutex.Lock()
 	defer kv.mutex.Unlock()
+
+	const maxKeyBytes = 250
+	const maxValueBytes = 1024 * 1024
+
+	if len(key) > maxKeyBytes {
+		return errMaxKeyBytes
+	} else if len(value) > maxValueBytes {
+		return errMaxValueBytes
+	}
+
 	kv.data[key] = value
+	return nil
 }
+
+var errMaxKeyBytes = fmt.Errorf("max key size allowed is 255 bytes")
+var errMaxValueBytes = fmt.Errorf("max value size allowed is 1 MB")

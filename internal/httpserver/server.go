@@ -20,7 +20,7 @@ type Server struct {
 type KVStore interface {
 	Get(key string) (string, bool)
 	Delete(key string)
-	Write(key, value string)
+	Write(key, value string) error
 }
 
 type serverOptions struct {
