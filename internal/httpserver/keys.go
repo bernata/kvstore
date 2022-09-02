@@ -10,50 +10,58 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func retrieveKeyHandler() http.Handler {
+func retrieveKeyHandler(store KVStore) http.Handler {
 	return newHandler(
-		retrieveKeyEndpoint(),
+		retrieveKeyEndpoint(store),
 		decodeRetrieveValueRequest,
 		encodeJSON,
 	)
 }
 
-func writeKeyHandler() http.Handler {
+func writeKeyHandler(store KVStore) http.Handler {
 	return newHandler(
-		writeKeyEndpoint(),
+		writeKeyEndpoint(store),
 		decodeWriteValueRequest,
 		encodeNoContent,
 	)
 }
 
-func deleteKeyHandler() http.Handler {
+func deleteKeyHandler(store KVStore) http.Handler {
 	return newHandler(
-		deleteKeyEndpoint(),
-		decodeDeleteValueRequest,
+		deleteKeyEndpoint(store),
+		decodeDeleteKeyRequest,
 		encodeNoContent,
 	)
 }
 
-func retrieveKeyEndpoint() endpoint.Endpoint {
+func retrieveKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		requestRetrieve := request.(RetrieveValueRequest)
+
+		value, ok := store.Get(requestRetrieve.Key)
+		if !ok {
+			return nil, NotFoundErrorf("key '%s' not found", requestRetrieve.Key)
+		}
+
 		return RetrieveValueResponse{
 			Key:   requestRetrieve.Key,
-			Value: "base64 me",
+			Value: value,
 		}, nil
 	}
 }
 
-func writeKeyEndpoint() endpoint.Endpoint {
+func writeKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		//requestWrite := request.(WriteValueRequest)
+		requestWrite := request.(WriteValueRequest)
+		store.Write(requestWrite.Key, requestWrite.Value)
 		return WriteValueResponse{}, nil
 	}
 }
 
-func deleteKeyEndpoint() endpoint.Endpoint {
+func deleteKeyEndpoint(store KVStore) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		//requestWrite := request.(DeleteKeyRequest)
+		requestWrite := request.(DeleteKeyRequest)
+		store.Delete(requestWrite.Key)
 		return DeleteKeyResponse{}, nil
 	}
 }
@@ -77,9 +85,7 @@ func decodeWriteValueRequest(_ context.Context, r *http.Request) (interface{}, e
 		return nil, BadRequest("error reading key from path", nil)
 	}
 
-	request := WriteValueRequest{
-		Key: key,
-	}
+	var request WriteValueRequest
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, BadRequest("error reading request body", err)
@@ -88,11 +94,11 @@ func decodeWriteValueRequest(_ context.Context, r *http.Request) (interface{}, e
 	if err != nil {
 		return nil, BadRequest("error parsing request body", err)
 	}
-
+	request.Key = key
 	return request, nil
 }
 
-func decodeDeleteValueRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteKeyRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	key, ok := vars["key"] //path parameter name
 	if !ok {
@@ -114,7 +120,7 @@ type RetrieveValueResponse struct {
 }
 
 type WriteValueRequest struct {
-	Key   string `json:"key"`
+	Key   string `json:"-"`
 	Value string `json:"value"`
 }
 

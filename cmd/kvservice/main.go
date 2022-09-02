@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/bernata/kvstore/internal/kv"
+
 	"github.com/alecthomas/kong"
 	"github.com/bernata/kvstore/internal/httpserver"
 )
@@ -18,7 +20,8 @@ func main() {
 	var commandLine ServiceCommandLine
 	_ = kong.Parse(&commandLine)
 
-	srv, err := newServer(commandLine.Port)
+	store := kv.NewStore(100)
+	srv, err := newServer(commandLine.Port, store)
 	if err != nil {
 		panic(err)
 	}
@@ -29,11 +32,11 @@ func main() {
 	}
 }
 
-func newServer(port int) (httpserver.Server, error) {
+func newServer(port int, store *kv.Store) (httpserver.Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return httpserver.Server{}, err
 	}
 
-	return httpserver.New(listener)
+	return httpserver.New(listener, store)
 }

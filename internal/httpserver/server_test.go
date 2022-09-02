@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/bernata/kvstore/internal/kv"
+
 	"github.com/bernata/kvstore/internal/httpserver"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +30,9 @@ func startTestServer() httpserver.Server {
 		panic(err)
 	}
 
-	srv, err := httpserver.New(listener)
+	store := kv.NewStore(10)
+
+	srv, err := httpserver.New(listener, store)
 	if err != nil {
 		panic(err)
 	}

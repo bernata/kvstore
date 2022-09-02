@@ -12,15 +12,22 @@ import (
 type Server struct {
 	server   *http.Server
 	listener net.Listener
+	store    KVStore
 }
 
-func New(listener net.Listener) (Server, error) {
+type KVStore interface {
+	Get(key string) (string, bool)
+	Delete(key string)
+	Write(key, value string)
+}
+
+func New(listener net.Listener, store KVStore) (Server, error) {
 	server := &http.Server{
 		Addr:    listener.Addr().String(),
-		Handler: router(),
+		Handler: router(store),
 	}
 
-	return Server{server: server, listener: listener}, nil
+	return Server{server: server, listener: listener, store: store}, nil
 }
 
 func (s Server) BaseURL() string {
