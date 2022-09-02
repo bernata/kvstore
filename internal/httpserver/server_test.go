@@ -23,7 +23,6 @@ func TestServer(t *testing.T) {
 
 	require.NoError(t, srv.Shutdown(context.Background()))
 }
-
 func startTestServer(options ...httpserver.ServerOption) httpserver.Server {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
