@@ -18,6 +18,25 @@ NOTE: keys are logged; but values are never logged.
 - gnumake 3.81+
 - docker 20.10+
 
+## Getting Started
+```
+git clone https://github.com/bernata/kvstore.git
+cd kvstore
+make all
+```
+
+In one terminal type:
+```
+make run
+```
+
+In another terminal type:
+```shell
+./bin/kvclient write --key k1 --value v1
+./bin/kvclient get --key k1
+./bin/kvclient delete --key k1
+```
+
 ## Build
 `make all`
 
@@ -34,10 +53,17 @@ Runs unit tests for both kvclient and kvservice.
 Runs kvservice locally on port 8282
 
 ## Docker
-`make docker`
+`make docker` - builds a centos image of kvservice
 
-Builds docker image for kvservice. 
-Run docker: `docker run -p 8282:8282 kvservice:latest`
+`make dockerrun` - runs the docker image with port mapping 8282:8282
+
+It can be convenient to run the docker container and use the client to test against the service.
+```
+make docker
+make dockerrun
+make build_client
+./bin/kvclient write --key "mykey" --value "myvalue"
+```
 
 ## Examples
 ```shell
@@ -61,11 +87,6 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
   > ./bin/kvclient get --key "mykey"
     kvclient: error: [404]: [404]: key 'mykey' not found"
 ```
-
-# Docker
-`make docker` - builds a linux service and centos image of kvservice
-
-`make dockerrun` - runs the docker image with port mapping 8282:8282
 
 ## Deployment
 - Run terraform to provision infrastructure/monitoring/alerts -- see runbook
@@ -95,14 +116,14 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
   Response is 200 if the key no longer exists
     ``` 
 
-- POST `/v1/keys/{key}?`
+- POST `/v1/keys/{key}`
     ```
   {
       "value": "data"
   }
   key can be any url encoded string upto 250 bytes
   value can be any data string upto 1MB
-  Response is 200 if the key no longer exists
+  Response is 200 if the key is written
     ``` 
 
 ## Client
@@ -125,7 +146,7 @@ Run docker: `docker run -p 8282:8282 kvservice:latest`
   Commands are: get, write, delete
 - `cmd/kvclient/` - location of main.go for client
 
-# Common Source Code
+## Common Source Code
 - `apiclient/` - hand coded http calls to kvservice. The request/response structures are
   used by the server to encode/decode on the wire. They are also used by the command line tool
   to marshal command line parameters into a request structure; and output responses.
