@@ -1,3 +1,5 @@
+[![Go](https://github.com/bernata/kvstore/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/bernata/kvstore/actions/workflows/go.yml)
+
 # kvstore
 In memory key value store backed by a simple map protected by a read-write lock.
 
